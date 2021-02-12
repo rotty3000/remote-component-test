@@ -34,3 +34,9 @@ For convenience, these `build` scripts create a commit with the generated files,
 # See also
 
 -   [wincent/remote-app-test](https://github.com/wincent/remote-app-test): Repository that explores a different model (embedding iframes) for composing remotely hosted modules.
+
+# Run Everything
+
+Run all samples from the root directory using:
+
+`python -m SimpleHTTPServer 8090`

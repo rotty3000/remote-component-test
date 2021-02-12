@@ -10,21 +10,17 @@
 	 * Returns `undefined` if no such property exists.
 	 */
 	function lookupDescriptor(descriptor) {
-		let value;
-
-		if (/^(?:\w+)(?:\.\w+)*$/.test(descriptor)) {
-			value = descriptor.split('.').reduce((acc, property) => {
-				if (acc && property in acc) {
-					return acc[property];
-				}
-			}, window);
-		} else {
-			console.warning(
-				`Malformed descriptor: ${JSON.stringify(descriptor)}`
-			);
+		let api = window;
+		for (const property of descriptor.split('.')) {
+			if (property in api) {
+				api = api[property];
+			}
+			else {
+				api = undefined;
+				break;
+			}
 		}
-
-		return value;
+		return api
 	}
 
 	// Demo reducer.
@@ -88,21 +84,9 @@
 		connectedCallback() {
 			this.button.addEventListener('click', this.append);
 
-			const descriptor = this.getAttribute('store-descriptor');
+			const StateManager = lookupDescriptor(this.getAttribute('statemanager-descriptor'));
 
-			const State = lookupDescriptor(descriptor);
-
-			const Store = State.get('default');
-
-			// Note: normally you would configure this somewhere outside your
-			// component, but for the purposes of seeing this work in DXP we're
-			// just going to do it here.
-
-			const {reducer: baseReducer, store} = Store;
-
-			const {dispatch, getState, replaceReducer, subscribe} = store;
-
-			replaceReducer(State.Util.reduceReducers([baseReducer, reducer]));
+			const {dispatch, getState, subscribe} = StateManager.GlobalStore.Get(true).CreateStore('redux-vanilla', reducer, []);
 
 			this.dispatch = dispatch;
 

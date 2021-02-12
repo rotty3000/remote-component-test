@@ -1,6 +1,50 @@
 (function () {
 	'use strict';
 
+	/**
+	 * Similar to the implementation of `lookupCallback` in simple-react-app.
+	 *
+	 * Given a descriptor of the form `foo.bar.baz`, looks up
+	 * `window.foo.bar.baz`.
+	 *
+	 * Returns `undefined` if no such property exists.
+	 */
+	function lookupDescriptor(descriptor) {
+		let api = window;
+		for (const property of descriptor.split('.')) {
+			if (property in api) {
+				api = api[property];
+			}
+			else {
+				api = undefined;
+				break;
+			}
+		}
+		return api
+	}
+
+	const initialState = {
+		counter: 0,
+		text: 'Fascinating sample text:',
+	};
+
+	const WORDS = ['foo', 'bar', 'baz', 'qux'];
+
+	function reducer(state, action) {
+		if (action.type === 'append') {
+			return {
+				...state,
+				counter: state.counter + 1,
+				text: state.text + ` ${WORDS[state.counter % WORDS.length]}`,
+			};
+		}
+		else if (action.type === 'initial') {
+			return action.state;
+		}
+
+		return state;
+	}
+
 	class ReduxVanillaSlim extends HTMLElement {
 		constructor() {
 			super();
@@ -27,11 +71,9 @@
 		connectedCallback() {
 			this.button.addEventListener('click', this.append);
 
-			const descriptor = this.getAttribute('store-descriptor');
+			const StateManager = lookupDescriptor(this.getAttribute('statemanager-descriptor'));
 
-			const State = window.lookupDescriptor(descriptor);
-
-			const {dispatch, getState, subscribe} = State.get('slim').store;
+			const {dispatch, getState, subscribe} = StateManager.GlobalStore.Get(true).CreateStore('redux-vanilla-slim', reducer, []);
 
 			this.dispatch = dispatch;
 
@@ -39,7 +81,7 @@
 				this.prose.innerText = getState().text;
 			});
 
-			this.prose.innerText = getState().text;
+			this.dispatch({type: 'initial', state: initialState});
 		}
 
 		disconnectedCallback() {
@@ -56,55 +98,4 @@
 	} else {
 		customElements.define('redux-vanilla-slim', ReduxVanillaSlim);
 	}
-})();
-
-(function () {
-	'use strict';
-
-	/**
-	 * Similar to the implementation of `lookupCallback` in simple-react-app.
-	 *
-	 * Given a descriptor of the form `foo.bar.baz`, looks up
-	 * `window.foo.bar.baz`.
-	 *
-	 * Returns `undefined` if no such property exists.
-	 */
-	window.lookupDescriptor = (descriptor) => {
-		let value;
-
-		if (/^(?:\w+)(?:\.\w+)*$/.test(descriptor)) {
-			value = descriptor.split('.').reduce((acc, property) => {
-				if (acc && property in acc) {
-					return acc[property];
-				}
-			}, window);
-		} else {
-			console.warning(
-				`Malformed descriptor: ${JSON.stringify(descriptor)}`
-			);
-		}
-
-		return value;
-	};
-
-	const initialState = {
-		counter: 0,
-		text: 'Fascinating sample text:',
-	};
-
-	const WORDS = ['foo', 'bar', 'baz', 'qux'];
-
-	function reducer(state, action) {
-		if (action.type === 'append') {
-			return {
-				...state,
-				counter: state.counter + 1,
-				text: state.text + ` ${WORDS[state.counter % WORDS.length]}`,
-			};
-		}
-
-		return state;
-	}
-
-	Liferay.State.register('slim', reducer, initialState);
 })();
