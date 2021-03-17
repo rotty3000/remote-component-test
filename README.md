@@ -30,7 +30,10 @@ Install [Yarn](https://classic.yarnpkg.com/)
 
 Resolve/Install dependencies by running from the repo root:
 
-```
+```bash
+yarn
+
+# If you have issues of any kind then try
 yarn install --legacy-peer-deps
 ```
 
@@ -53,12 +56,22 @@ For convenience, these `build` scripts create a commit with the generated files,
 
 ## Run service with all components
 
+Install http-server
+
+```bash
+yarn global add http-server
 ```
-python -m SimpleHTTPServer 8090
+
+from the root of the repo run:
+
+```bash
+http-server -p 8090
 ```
 
 ## Configure Liferay
 
-Build and deploy the module from https://git.cfzcea.dev.desjardins.com/projects/fondation-portail/repos/remote-web-component-integration/browse
+Build and deploy the module from https://github.com/rotty3000/remote-web-component-poc
 
 Once installed, copy the files from `configs` into `${liferay-workspace}/bundles/osgi/configs`
+
+You should notice some widgets in the menu.
