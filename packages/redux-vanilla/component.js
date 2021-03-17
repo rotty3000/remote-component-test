@@ -44,10 +44,6 @@
 	}
 
 	function reducer(state, action) {
-		// Normally you wouldn't have to write your reducer so defensively (ie.
-		// to tolerate `undefined` state) but in the case of using the "default"
-		// store in DXP, it's already initialized to an empty object before you
-		// get to run.
 		if (action.type === 'append') {
 			return {
 				...state,
@@ -94,9 +90,6 @@
 				this.prose.innerText = getState().text;
 			});
 
-			// Normally wouldn't need this (because would set up state
-			// elsewhere), but the demo seeding the initial state here.
-
 			this.append();
 		}
 
@@ -107,11 +100,7 @@
 		}
 	}
 
-	if (customElements.get('redux-vanilla')) {
-		console.log(
-			'Skipping registration for <redux-vanilla> (already registered)'
-		);
-	} else {
+	if (!customElements.get('redux-vanilla')) {
 		customElements.define('redux-vanilla', ReduxVanilla);
 	}
 })();

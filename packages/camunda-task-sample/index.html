@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title><%= htmlWebpackPlugin.options.title %></title>
+		<meta charset="utf-8" />
+		<link rel="stylesheet" type="text/css" href="../../../index.css" />
+		<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+	</head>
+	<body>
+		<header>
+			<h1><%= htmlWebpackPlugin.options.title %></h1>
+		</header>
+		<div id="content">
+			<camunda-task-sample
+				statemanager-descriptor="StateManager"
+			></camunda-task-sample>
+		</div>
+		<footer>
+			<a href="../../../index.html">Back</a>
+		</footer>
+	</body>
+</html>

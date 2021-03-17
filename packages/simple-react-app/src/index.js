@@ -1,33 +1,144 @@
 import React, {useState} from 'react';
 import ReactDOM from 'react-dom';
+import { Link, Route, Switch, BrowserRouter } from "react-router-dom";
 
-/**
- * We're defining this locally here, but could also set it up as a well-known
- * global so that any web component could use it.
- */
-function lookupCallback(descriptor) {
-	let callback;
-
-	if (typeof descriptor === 'string') {
-		if (/^(?:\w+)(?:\.\w+)*$/.test(descriptor)) {
-			callback = descriptor.split('.').reduce((acc, property) => {
-				if (acc && property in acc) {
-					return acc[property];
-				}
-			}, window);
-		} else {
-			console.warning(
-				`Malformed descriptor: ${JSON.stringify(descriptor)}`
-			);
+function lookupDescriptor(descriptor) {
+	let api = window;
+	for (const property of descriptor.split('.')) {
+		if (property in api) {
+			api = api[property];
+		}
+		else {
+			api = undefined;
+			break;
 		}
 	}
-
-	return typeof callback === 'function' ? callback : () => {};
+	return api
 }
+
+const HomePage = ({name, onNameChange}) => {
+	return (
+		<div>
+			<h2>Home</h2>
+			<div>
+				<label>
+					<span>Name:</span>
+					<input
+						onChange={(event) => onNameChange(event.target.value)}
+						type="text"
+						value={name}
+					/>
+				</label>
+				<p>Hello, {name}!</p>
+			</div>
+		</div>
+	);
+};
+
+const ContactPage = ({name, onNameChange}) => {
+	return (
+		<div>
+			<h2>Contact</h2>
+			<div>
+				<label>
+					<span>Name:</span>
+					<input
+						onChange={(event) => onNameChange(event.target.value)}
+						type="text"
+						value={name}
+					/>
+				</label>
+				<p>Hello, {name}!</p>
+			</div>
+		</div>
+	);
+};
+
+const ProfilePage = ({name, onNameChange}) => {
+	return (
+		<div>
+			<h2>Profile</h2>
+			<div>
+				<label>
+					<span>Name:</span>
+					<input
+						onChange={(event) => onNameChange(event.target.value)}
+						type="text"
+						value={name}
+					/>
+				</label>
+				<p>Hello, {name}!</p>
+			</div>
+		</div>
+	);
+};
+
+const Main = ({name, onNameChange, externalNavigation}) => {
+	return (
+		<div className="app">
+			<div>
+				<h3>Internal Navigation</h3>
+				<Link to="/">Home</Link>|
+				<Link to="/contact">Contact</Link>|
+				<Link to="/profile">Profile</Link>
+			</div>
+			<div className="content">
+				<Switch>
+					<Route exact path="/">
+						<HomePage
+							onNameChange={onNameChange}
+							name={name}
+						/>
+					</Route>
+					<Route path="/contact">
+						<ContactPage
+							onNameChange={onNameChange}
+							name={name}
+						/>
+					</Route>
+					<Route path="/profile">
+						<ProfilePage
+							onNameChange={onNameChange}
+							name={name}
+						/>
+					</Route>
+					<Route>
+						<HomePage
+							onNameChange={onNameChange}
+							name={name}
+						/>
+					</Route>
+				</Switch>
+			</div>
+			{/* <div>
+				<h5>External Navigation</h5>
+				<ul>
+					{externalNavigation.routerBaseSite && <li><a href={externalNavigation.routerBaseSite}>{externalNavigation.routerBaseSite}</a></li>}
+					{externalNavigation.routerBasePage && <li><a href={externalNavigation.routerBasePage}>{externalNavigation.routerBasePage}</a></li>}
+					{externalNavigation.routerBaseComponents && externalNavigation.routerBaseComponents.flatMap(
+						e => e.navigations
+					).map(
+						n => (<li key={n}><a href={n}>{n}</a></li>)
+					)}
+				</ul>
+			</div> */}
+		</div>
+	);
+};
 
 class App extends React.Component {
 	constructor(props) {
 		super(props);
+
+		try {
+			this.unsubscribe = props.StateManager.GlobalStore.Get().Subscribe(
+				'com.liferay.portlet.navigation',
+				s => this.setState({...this.state, externalNavigation: s})
+			);
+		}
+		catch(err) {
+			console.debug("No store was found, ignoring.");
+		}
 
 		this.state = {
 			// This illustrates a gotcha with web component attributes; if not
@@ -36,6 +147,8 @@ class App extends React.Component {
 			//
 			// If you care about it, you have to do a manual fallback.
 			userName: props.userName ?? App.defaultProps.userName,
+			routerBaseSelf: props.routerBaseSelf ?? App.defaultProps.routerBaseSelf,
+			externalNavigation: {}
 		};
 	}
 
@@ -51,35 +164,27 @@ class App extends React.Component {
 		}
 	}
 
+	componentWillUnmount() {
+		this.unsubscribe && this.unsubscribe();
+	}
+
 	render() {
 		return (
-			<Greeter
-				onNameChange={(userName) => this.setState({userName})}
-				name={this.state.userName}
-			/>
+			<BrowserRouter basename={this.state.routerBaseSelf}>
+				<Main
+					name={this.state.userName}
+					onNameChange={(userName) => this.setState({userName})}
+					externalNavigation={this.state.externalNavigation}
+				/>
+			</BrowserRouter>
 		);
 	}
 }
 
 App.defaultProps = {
 	userName: 'Jane Tester',
+	routerBaseSelf: '/packages/simple-react-app'
 };
-
-function Greeter({name, onNameChange}) {
-	return (
-		<div>
-			<label>
-				<span>Name:</span>
-				<input
-					onChange={(event) => onNameChange(event.target.value)}
-					type="text"
-					value={name}
-				/>
-			</label>
-			<p>Hello, {name}!</p>
-		</div>
-	);
-}
 
 class SimpleReactApp extends HTMLElement {
 	static get observedAttributes() {
@@ -105,103 +210,39 @@ class SimpleReactApp extends HTMLElement {
 	}
 
 	connectedCallback() {
-		const name = this.getAttribute('name');
+		const StateManager = lookupDescriptor(this.getAttribute('statemanager-descriptor'));
 
-		const onChange =
-			this.onChange ??
-			lookupCallback(this.getAttribute('onChangeDescriptor'));
+		let name = this.getAttribute('name');
+		let routerBaseSelf = this.getAttribute("router-base-self");
 
+		this.render(name, routerBaseSelf, StateManager);
+	}
+
+	render(name, routerBaseSelf, StateManager) {
 		ReactDOM.render(
-			<App onChange={onChange} userName={name} />,
+			<App
+				userName={name}
+				routerBaseSelf={routerBaseSelf}
+				StateManager={StateManager}
+			/>,
 			this.container
 		);
 	}
 
 	disconnectedCallback() {
 		ReactDOM.unmountComponentAtNode(this.container);
+		this.unsubscribe && this.unsubscribe();
 	}
 }
 
-if (customElements.get('simple-react-app')) {
-	console.log(
-		'Skipping registration for <simple-react-app> (already registered)'
-	);
-} else {
+if (!customElements.get('simple-react-app')) {
 	customElements.define('simple-react-app', SimpleReactApp);
 }
 
 const container = document.getElementById('simple-react-app-standalone-root');
 
 if (container) {
-	// We're probably being rendered at:
-	//
-	// http://remote-component-test.wincent.com/packages/simple-react-app/index.html
-
 	const component = document.createElement('simple-react-app');
 
 	container.appendChild(component);
-
-	// Not really relevant to the initial proof-of-concept in DXP, but you can set
-	// this to `true` in the standalone demo to show bidirectional flow between the
-	// React web app inside the web component and the outside world.
-	//
-	// This adds a button that shows that you can:
-	//
-	// - `setAttribute` on the web component and have that data show up in the React
-	//   app; and:
-	// - `setAttribute` on the web component to register a callback, which the React
-	//   app can the use to communicate information back to the outside world.
-	if (demoBidirectionalDataFlow) {
-		// Demo how we can register a global callback to be notified of changes.
-
-		window.__SimpleReactApp__ = {
-			onChange({userName}) {
-				console.log(`New name is ${userName} (via descriptor)`);
-			},
-		};
-
-		component.setAttribute('onChangeDescriptor', '__SimpleReactApp__.onChange');
-
-		// Show that we can also pass function objects directly.
-		// (Remove or invert the `if (false)` conditional to see this in action.)
-
-		if (false) {
-			component.onChange = ({userName}) => {
-				console.log(`New name is ${userName} (via property)`);
-			};
-		}
-
-		// Make a silly button for our attribute-change demo (see
-		// `attributeChangedCallback`):
-
-		const FIRST_NAMES = ['Brian', 'Chema', 'Esther', 'Greg', 'Iván', 'Ray'];
-
-		const INITIALS = Array.from('ABCDEFGHIJKLMNOPQRSTUVWXYZ');
-
-		const LAST_NAMES = [
-			'Einstein',
-			'Kaepernick',
-			'Houston',
-			'Napoleon',
-			'Fitzgerald',
-			'Franco',
-		];
-
-		const randomize = document.createElement('button');
-
-		randomize.innerText = 'Randomize!';
-
-		randomize.onclick = randomize.onsubmit = () => {
-			component.setAttribute(
-				'name',
-				`${pick(FIRST_NAMES)} ${pick(INITIALS)} ${pick(LAST_NAMES)}`
-			);
-		};
-
-		container.appendChild(randomize);
-
-		function pick(array) {
-			return array[Math.floor(Math.random() * array.length)];
-		}
-	}
 }

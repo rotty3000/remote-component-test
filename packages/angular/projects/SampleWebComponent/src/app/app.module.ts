@@ -15,7 +15,9 @@ export class AppModule {
 		const webComponent = createCustomElement(SomeAngularButtonComponent, {
 			injector,
 		});
-		customElements.define('some-angular-button', webComponent);
+		if (!customElements.get('some-angular-button')) {
+			customElements.define('some-angular-button', webComponent);
+		}
 	}
 
 	ngDoBootstrap() {}

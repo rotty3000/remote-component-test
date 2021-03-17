@@ -30,7 +30,7 @@
 
 	const WORDS = ['foo', 'bar', 'baz', 'qux'];
 
-	function reducer(state, action) {
+	function reducer(state = initialState, action) {
 		if (action.type === 'append') {
 			return {
 				...state,
@@ -73,7 +73,7 @@
 
 			const StateManager = lookupDescriptor(this.getAttribute('statemanager-descriptor'));
 
-			const {dispatch, getState, subscribe} = StateManager.GlobalStore.Get(true).CreateStore('redux-vanilla-slim', reducer, []);
+			const {dispatch, getState, subscribe} = StateManager.GlobalStore.Get().CreateStore('redux-vanilla-slim', reducer, []);
 
 			this.dispatch = dispatch;
 
@@ -81,7 +81,7 @@
 				this.prose.innerText = getState().text;
 			});
 
-			this.dispatch({type: 'initial', state: initialState});
+			this.prose.innerText = getState().text;
 		}
 
 		disconnectedCallback() {
@@ -91,11 +91,7 @@
 		}
 	}
 
-	if (customElements.get('redux-vanilla-slim')) {
-		console.log(
-			'Skipping registration for <redux-vanilla-slim> (already registered)'
-		);
-	} else {
+	if (!customElements.get('redux-vanilla-slim')) {
 		customElements.define('redux-vanilla-slim', ReduxVanillaSlim);
 	}
 })();

@@ -1,17 +1,37 @@
 Simple test web components to explore Remote Component features ([IFI-2013](https://issues.liferay.com/browse/IFI-2013)).
 
-Components can be found in [the `packages/` directory](https://github.com/wincent/remote-component-test/tree/master/packages).
+Components can be found in the `packages/` directory.
 
-# Demo
+## Setup
 
-Live copies of the components are hosted on GitHub pages at [remote-component-test.wincent.com](http://remote-component-test.wincent.com/).
+Install `n`:
 
-# Building
+`curl -L https://git.io/n-install | bash`
 
-Install dependencies by running [Yarn](https://classic.yarnpkg.com/) from the repo root:
+Refresh `.bashrc`:
 
-```sh
-yarn
+Install latest nodejs
+```
+n latest
+```
+
+Add corporate registry. Edit `.npmrc` add:
+
+```
+registry=https://artifacts.cfzcea.dev.desjardins.com/artifactory/api/npm/npm-virtual/
+registry=http://registry.npmjs.org/
+```
+
+Install [Yarn](https://classic.yarnpkg.com/)
+
+`npm install -g yarn`
+
+## Building
+
+Resolve/Install dependencies by running from the repo root:
+
+```
+yarn install --legacy-peer-deps
 ```
 
 Most components don't have an build process, because the JavaScript is ready to be consumed as-is.
@@ -31,12 +51,14 @@ yarn build
 
 For convenience, these `build` scripts create a commit with the generated files, so that they can be published to GitHub pages with a `git push`. To skip the commit, you can run `yarn build:nocommit` instead.
 
-# See also
+## Run service with all components
 
--   [wincent/remote-app-test](https://github.com/wincent/remote-app-test): Repository that explores a different model (embedding iframes) for composing remotely hosted modules.
+```
+python -m SimpleHTTPServer 8090
+```
 
-# Run Everything
+## Configure Liferay
 
-Run all samples from the root directory using:
+Build and deploy the module from https://git.cfzcea.dev.desjardins.com/projects/fondation-portail/repos/remote-web-component-integration/browse
 
-`python -m SimpleHTTPServer 8090`
+Once installed, copy the files from `configs` into `${liferay-workspace}/bundles/osgi/configs`
